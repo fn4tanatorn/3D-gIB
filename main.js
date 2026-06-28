@@ -1,6 +1,6 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/loaders/GLTFLoader.js";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const canvas = document.querySelector("#webgl");
 const statusEl = document.querySelector("#modelStatus");
@@ -136,6 +136,7 @@ const core = createCore();
 
 galaxyGroup.add(stars, spiral, core);
 galaxyGroup.rotation.x = 0.18;
+statusEl.textContent = "Showing procedural Galexia scene.";
 
 function loadGalexiaModel() {
   const loader = new GLTFLoader();
@@ -155,7 +156,8 @@ function loadGalexiaModel() {
         statusEl.textContent = `Loading model: ${progress}%`;
       }
     },
-    () => {
+    (error) => {
+      console.warn("assets/galexia.glb could not be loaded. Procedural scene is displayed instead.", error);
       statusEl.textContent = "No assets/galexia.glb found. Showing procedural Galexia scene.";
     }
   );
