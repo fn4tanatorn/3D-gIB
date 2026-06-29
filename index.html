@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Galexia | Detailed Cinematic Three.js Galaxy</title>
+  <meta name="description" content="Galexia Ultra is a high-detail procedural Three.js galaxy scene focused purely on spiral arms, star clusters, nebula dust, and a luminous galactic core." />
+  <title>Galexia Ultra | High Detail Procedural Galaxy</title>
   <link rel="stylesheet" href="style.css" />
   <script type="importmap">
     {
@@ -15,21 +16,27 @@
   </script>
 </head>
 <body>
-  <canvas id="webgl" aria-label="Galexia cinematic 3D galaxy scene with detailed planets, satellites, station, comets, and asteroids"></canvas>
+  <canvas id="webgl" aria-label="Galexia Ultra high detail procedural 3D spiral galaxy with star clusters, dust lanes, nebula fields, and luminous galactic core"></canvas>
 
-  <main class="hero-panel">
-    <p class="eyebrow">Cinematic 3D Web Experience</p>
-    <h1>Galexia</h1>
+  <main class="hero-panel" aria-label="Galexia Ultra information panel">
+    <p class="eyebrow">Procedural Galaxy Simulation</p>
+    <h1>Galexia Ultra</h1>
     <p>
-      A luminous interactive galaxy built with Three.js, procedural particles, textured planets, layered atmospheres, orbiting satellites, crystal stations, comets, asteroid details, cinematic camera motion, and mobile-first WebGL rendering.
+      A galaxy-only Three.js scene with dense spiral arms, layered dust lanes, nebula volumes,
+      stellar temperature variation, glowing star clusters, and cinematic GPU-friendly rendering.
     </p>
+    <div class="metrics" aria-label="Scene metrics">
+      <span><strong>Galaxy only</strong> no planets, ships, or stations</span>
+      <span><strong>Procedural</strong> stars, dust, nebula, core</span>
+      <span><strong>Responsive</strong> desktop and mobile particle budgets</span>
+    </div>
     <div class="actions">
-      <button id="resetCamera" type="button">Reset Camera</button>
+      <button id="resetCamera" type="button">Reset View</button>
       <a href="https://github.com/fn4tanatorn/3D-gIB" target="_blank" rel="noreferrer">GitHub Repo</a>
     </div>
   </main>
 
-  <div class="status" id="modelStatus">Initializing detailed Galexia...</div>
+  <div class="status" id="modelStatus">Building procedural galaxy field...</div>
 
   <script type="module" src="main.js"></script>
 </body>
