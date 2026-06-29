@@ -12,7 +12,7 @@ const isMobile = window.matchMedia("(max-width: 720px)").matches;
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x02020a, 0.011);
+scene.fog = new THREE.FogExp2(0x02020a, 0.012);
 
 const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.1, 1600);
 const defaultCameraPosition = new THREE.Vector3(isMobile ? 0 : 2.4, isMobile ? 6.8 : 5.6, isMobile ? 22 : 20);
@@ -27,7 +27,7 @@ renderer.toneMappingExposure = 1.35;
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), isMobile ? 0.7 : 1.05, 0.42, 0.06);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), isMobile ? 0.75 : 1.08, 0.42, 0.06);
 composer.addPass(bloomPass);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -98,14 +98,12 @@ function createPlanetTexture(baseHue = 0.65, accentHue = 0.75) {
     const x = Math.random() * size;
     const y = Math.random() * size;
     const radius = 4 + Math.random() * 24;
-    const rimAlpha = 0.11 + Math.random() * 0.16;
-    const pitAlpha = 0.09 + Math.random() * 0.17;
-    context.strokeStyle = `rgba(235,244,255,${rimAlpha})`;
+    context.strokeStyle = `rgba(235,244,255,${0.1 + Math.random() * 0.16})`;
     context.lineWidth = 1 + Math.random() * 2.4;
     context.beginPath();
     context.ellipse(x, y, radius * (1.25 + Math.random() * 0.7), radius * (0.42 + Math.random() * 0.4), Math.random() * Math.PI, 0, Math.PI * 2);
     context.stroke();
-    context.fillStyle = `rgba(0,0,18,${pitAlpha})`;
+    context.fillStyle = `rgba(0,0,18,${0.08 + Math.random() * 0.16})`;
     context.beginPath();
     context.ellipse(x, y, radius, radius * (0.38 + Math.random() * 0.42), Math.random() * Math.PI, 0, Math.PI * 2);
     context.fill();
@@ -121,16 +119,6 @@ function createPlanetTexture(baseHue = 0.65, accentHue = 0.75) {
     context.moveTo(x, y);
     context.lineTo(x + Math.cos(Math.random() * Math.PI * 2) * length, y + Math.sin(Math.random() * Math.PI * 2) * length * 0.35);
     context.stroke();
-  }
-
-  for (let i = 0; i < 340; i += 1) {
-    const x = Math.random() * size;
-    const y = Math.random() * size;
-    const radius = 0.75 + Math.random() * 3.8;
-    context.fillStyle = `rgba(255,255,255,${0.018 + Math.random() * 0.075})`;
-    context.beginPath();
-    context.arc(x, y, radius, 0, Math.PI * 2);
-    context.fill();
   }
 
   const texture = new THREE.CanvasTexture(textureCanvas);
@@ -190,9 +178,7 @@ function createGalaxyArms(count = isMobile ? 12000 : 26000) {
 
       const mix = radius / 18.5;
       color.setHSL(0.72 - mix * 0.34 + Math.random() * 0.045, 0.9, 0.58 + Math.random() * 0.34);
-      colors[i3] = color.r;
-      colors[i3 + 1] = color.g;
-      colors[i3 + 2] = color.b;
+      color.toArray(colors, i3);
     }
   });
 }
@@ -211,9 +197,7 @@ function createStarTunnel(count = isMobile ? 5000 : 9500) {
       positions[i3 + 1] = Math.sin(angle) * radius * 0.62;
       positions[i3 + 2] = z;
       color.setHSL(0.58 + Math.random() * 0.2, 0.42 + Math.random() * 0.42, 0.7 + Math.random() * 0.28);
-      colors[i3] = color.r;
-      colors[i3 + 1] = color.g;
-      colors[i3 + 2] = color.b;
+      color.toArray(colors, i3);
     }
   });
 }
@@ -231,32 +215,52 @@ function createNebulaLayer(count = isMobile ? 720 : 1500) {
       positions[i3 + 1] = (Math.random() - 0.5) * 4.2;
       positions[i3 + 2] = Math.sin(angle) * radius + depth;
       color.setHSL(0.65 + Math.random() * 0.14, 0.76, 0.38 + Math.random() * 0.28);
-      colors[i3] = color.r;
-      colors[i3 + 1] = color.g;
-      colors[i3 + 2] = color.b;
+      color.toArray(colors, i3);
     }
   });
 }
 
+function createBackgroundStars() {
+  const starsGeometry = new THREE.BufferGeometry();
+  const count = isMobile ? 1500 : 3000;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const color = new THREE.Color();
+
+  for (let i = 0; i < count; i += 1) {
+    const i3 = i * 3;
+    positions[i3] = (Math.random() - 0.5) * 300;
+    positions[i3 + 1] = (Math.random() - 0.5) * 300;
+    positions[i3 + 2] = (Math.random() - 0.5) * 300;
+    color.setHSL(0.6 + Math.random() * 0.2, 0.8, 0.5 + Math.random() * 0.5);
+    color.toArray(colors, i3);
+  }
+
+  starsGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  starsGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+  const starsMaterial = new THREE.PointsMaterial({
+    size: isMobile ? 0.2 : 0.3,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.6,
+    sizeAttenuation: true,
+    depthWrite: false
+  });
+
+  return new THREE.Points(starsGeometry, starsMaterial);
+}
+
 function createCore() {
   const group = new THREE.Group();
-  const coreGeometry = new THREE.IcosahedronGeometry(1.15, 5);
-  const coreMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf8f3ff,
-    emissive: 0x9f76ff,
-    emissiveIntensity: 2.85,
-    roughness: 0.13,
-    metalness: 0.08
-  });
-  const core = new THREE.Mesh(coreGeometry, coreMaterial);
-  group.add(core);
-
+  const core = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(1.15, 5),
+    new THREE.MeshStandardMaterial({ color: 0xf8f3ff, emissive: 0x9f76ff, emissiveIntensity: 2.85, roughness: 0.13, metalness: 0.08 })
+  );
   const haloMaterial = new THREE.MeshBasicMaterial({ color: 0x8d72ff, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false });
   const haloA = new THREE.Mesh(new THREE.SphereGeometry(2.05, 72, 72), haloMaterial);
   const haloB = new THREE.Mesh(new THREE.SphereGeometry(3.35, 72, 72), haloMaterial.clone());
   haloB.material.opacity = 0.08;
-  group.add(haloA, haloB);
-
   const crownMaterial = new THREE.MeshBasicMaterial({ color: 0xd9c9ff, transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
   const crownA = new THREE.Mesh(new THREE.TorusGeometry(1.55, 0.018, 10, 180), crownMaterial);
   const crownB = crownA.clone();
@@ -264,29 +268,13 @@ function createCore() {
   crownA.rotation.x = Math.PI / 2;
   crownB.rotation.y = Math.PI / 2.35;
   crownC.rotation.z = Math.PI / 2.6;
-  group.add(crownA, crownB, crownC);
-
+  group.add(core, haloA, haloB, crownA, crownB, crownC);
   group.userData = { core, haloA, haloB, crownA, crownB, crownC };
   return group;
 }
 
-function addPlanetPanels(group, radius, color) {
-  const panelMaterial = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false });
-  const panelGeometry = new THREE.RingGeometry(radius * 1.03, radius * 1.045, 96, 1, 0, Math.PI * 0.72);
-  for (let i = 0; i < 4; i += 1) {
-    const panel = new THREE.Mesh(panelGeometry, panelMaterial.clone());
-    panel.rotation.set(Math.PI / 2 + i * 0.12, i * Math.PI * 0.5, i * 0.7);
-    panel.material.opacity = 0.18 + i * 0.035;
-    group.add(panel);
-  }
-}
-
-function placeSurfacePatch(mesh, patch, radius, theta, phi, lift = 1.006) {
-  const normal = new THREE.Vector3(
-    Math.sin(phi) * Math.cos(theta),
-    Math.cos(phi),
-    Math.sin(phi) * Math.sin(theta)
-  );
+function addSurfacePatch(mesh, patch, radius, theta, phi, lift = 1.01) {
+  const normal = new THREE.Vector3(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta));
   patch.position.copy(normal).multiplyScalar(radius * lift);
   patch.lookAt(normal.clone().multiplyScalar(radius * 1.85));
   mesh.add(patch);
@@ -296,90 +284,45 @@ function addPlanetSurfaceDetails(group, radius, accent = 0x99eaff) {
   const craterMaterial = new THREE.MeshBasicMaterial({ color: 0x050818, transparent: true, opacity: 0.34, side: THREE.DoubleSide, depthWrite: false });
   const rimMaterial = new THREE.MeshBasicMaterial({ color: 0xd7f8ff, transparent: true, opacity: 0.22, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
   const ridgeMaterial = new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: 0.24, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
-  const count = isMobile ? 10 : 24;
 
-  for (let i = 0; i < count; i += 1) {
+  for (let i = 0; i < (isMobile ? 10 : 24); i += 1) {
     const theta = Math.random() * Math.PI * 2;
     const phi = 0.45 + Math.random() * (Math.PI - 0.9);
     const craterRadius = radius * (0.035 + Math.random() * 0.055);
     const crater = new THREE.Mesh(new THREE.CircleGeometry(craterRadius, 24), craterMaterial.clone());
-    crater.material.opacity = 0.2 + Math.random() * 0.22;
-    placeSurfacePatch(group, crater, radius, theta, phi, 1.009);
-
     const rim = new THREE.Mesh(new THREE.RingGeometry(craterRadius * 1.04, craterRadius * 1.26, 32), rimMaterial.clone());
-    rim.material.opacity = 0.13 + Math.random() * 0.18;
-    placeSurfacePatch(group, rim, radius, theta, phi, 1.012);
+    addSurfacePatch(group, crater, radius, theta, phi, 1.009);
+    addSurfacePatch(group, rim, radius, theta, phi, 1.012);
   }
 
   for (let i = 0; i < (isMobile ? 8 : 18); i += 1) {
-    const theta = Math.random() * Math.PI * 2;
-    const phi = 0.55 + Math.random() * (Math.PI - 1.1);
-    const ridge = new THREE.Mesh(
-      new THREE.PlaneGeometry(radius * (0.24 + Math.random() * 0.32), radius * 0.007),
-      ridgeMaterial.clone()
-    );
-    ridge.material.opacity = 0.12 + Math.random() * 0.16;
+    const ridge = new THREE.Mesh(new THREE.PlaneGeometry(radius * (0.24 + Math.random() * 0.32), radius * 0.007), ridgeMaterial.clone());
     ridge.rotation.z = Math.random() * Math.PI;
-    placeSurfacePatch(group, ridge, radius, theta, phi, 1.014);
-  }
-}
-
-function addAsteroidSurfaceDetails(asteroid, scale) {
-  const craterMaterial = new THREE.MeshBasicMaterial({ color: 0x07070f, transparent: true, opacity: 0.44, side: THREE.DoubleSide, depthWrite: false });
-  const rimMaterial = new THREE.MeshBasicMaterial({ color: 0xc6c0db, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
-  const ridgeMaterial = new THREE.MeshStandardMaterial({ color: 0xc8c2da, emissive: 0x1c1730, roughness: 0.92, metalness: 0.05 });
-  const craterCount = isMobile ? 1 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 4);
-
-  for (let i = 0; i < craterCount; i += 1) {
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.random() * Math.PI;
-    const craterRadius = Math.max(scale * (0.12 + Math.random() * 0.16), 0.012);
-    const crater = new THREE.Mesh(new THREE.CircleGeometry(craterRadius, 18), craterMaterial.clone());
-    const rim = new THREE.Mesh(new THREE.RingGeometry(craterRadius * 1.08, craterRadius * 1.32, 18), rimMaterial.clone());
-    placeSurfacePatch(asteroid, crater, 1, theta, phi, 1.018);
-    placeSurfacePatch(asteroid, rim, 1, theta, phi, 1.022);
-  }
-
-  for (let i = 0; i < (isMobile ? 1 : 3); i += 1) {
-    const ridge = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.08, scale * 0.06, scale * (0.55 + Math.random() * 0.55)), ridgeMaterial.clone());
-    ridge.position.set((Math.random() - 0.5) * 0.9, (Math.random() - 0.5) * 0.9, (Math.random() - 0.5) * 0.9);
-    ridge.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-    asteroid.add(ridge);
+    addSurfacePatch(group, ridge, radius, Math.random() * Math.PI * 2, 0.55 + Math.random() * (Math.PI - 1.1), 1.014);
   }
 }
 
 function createPlanet({ radius, position, color, emissive = 0x111122, ring = false, textureHues = [0.65, 0.75], atmosphere = 0x7ad7ff }) {
   const group = new THREE.Group();
-  const material = new THREE.MeshStandardMaterial({
-    color,
-    map: createPlanetTexture(textureHues[0], textureHues[1]),
-    emissive,
-    emissiveIntensity: 0.2,
-    roughness: 0.56,
-    metalness: 0.08
-  });
-  const planet = new THREE.Mesh(new THREE.SphereGeometry(radius, 128, 128), material);
-  group.add(planet);
-  addPlanetSurfaceDetails(group, radius, atmosphere);
-
+  const planet = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 128, 128),
+    new THREE.MeshStandardMaterial({ color, map: createPlanetTexture(textureHues[0], textureHues[1]), emissive, emissiveIntensity: 0.2, roughness: 0.56, metalness: 0.08 })
+  );
   const atmosphereMesh = new THREE.Mesh(
     new THREE.SphereGeometry(radius * 1.055, 96, 96),
     new THREE.MeshBasicMaterial({ color: atmosphere, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, side: THREE.BackSide, depthWrite: false })
   );
-  group.add(atmosphereMesh);
-  addPlanetPanels(group, radius, atmosphere);
+  group.add(planet, atmosphereMesh);
+  addPlanetSurfaceDetails(group, radius, atmosphere);
 
   if (ring) {
     const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xa99cff, transparent: true, opacity: 0.34, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
     const ringMesh = new THREE.Mesh(new THREE.RingGeometry(radius * 1.55, radius * 2.25, 160), ringMaterial);
-    ringMesh.rotation.x = Math.PI / 2.7;
-    ringMesh.rotation.y = 0.35;
-    group.add(ringMesh);
-
     const outerRing = new THREE.Mesh(new THREE.RingGeometry(radius * 2.38, radius * 2.43, 160), ringMaterial.clone());
-    outerRing.material.opacity = 0.22;
+    ringMesh.rotation.set(Math.PI / 2.7, 0.35, 0);
     outerRing.rotation.copy(ringMesh.rotation);
-    group.add(outerRing);
+    outerRing.material.opacity = 0.22;
+    group.add(ringMesh, outerRing);
   }
 
   group.position.copy(position);
@@ -387,30 +330,32 @@ function createPlanet({ radius, position, color, emissive = 0x111122, ring = fal
   return group;
 }
 
+function addAsteroidSurfaceDetails(asteroid, scale) {
+  const craterMaterial = new THREE.MeshBasicMaterial({ color: 0x07070f, transparent: true, opacity: 0.44, side: THREE.DoubleSide, depthWrite: false });
+  const rimMaterial = new THREE.MeshBasicMaterial({ color: 0xc6c0db, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
+  for (let i = 0; i < (isMobile ? 2 : 4); i += 1) {
+    const craterRadius = Math.max(scale * (0.12 + Math.random() * 0.16), 0.012);
+    addSurfacePatch(asteroid, new THREE.Mesh(new THREE.CircleGeometry(craterRadius, 18), craterMaterial.clone()), 1, Math.random() * Math.PI * 2, Math.random() * Math.PI, 1.018);
+    addSurfacePatch(asteroid, new THREE.Mesh(new THREE.RingGeometry(craterRadius * 1.08, craterRadius * 1.32, 18), rimMaterial.clone()), 1, Math.random() * Math.PI * 2, Math.random() * Math.PI, 1.022);
+  }
+}
+
 function createAsteroids(count = isMobile ? 56 : 130) {
   const group = new THREE.Group();
-  const materials = [
-    new THREE.MeshStandardMaterial({ color: 0x9b91be, emissive: 0x130e24, roughness: 0.9, metalness: 0.12, flatShading: true }),
-    new THREE.MeshStandardMaterial({ color: 0x6f6d88, emissive: 0x0c1025, roughness: 0.94, metalness: 0.18, flatShading: true }),
-    new THREE.MeshStandardMaterial({ color: 0xb3a6c9, emissive: 0x171126, roughness: 0.86, metalness: 0.08, flatShading: true })
-  ];
+  const materials = [0x9b91be, 0x6f6d88, 0xb3a6c9].map((color) => new THREE.MeshStandardMaterial({ color, emissive: 0x130e24, roughness: 0.9, metalness: 0.12, flatShading: true }));
 
   for (let i = 0; i < count; i += 1) {
-    const detail = Math.random() > 0.55 ? 2 : 1;
-    const asteroid = new THREE.Mesh(new THREE.IcosahedronGeometry(1, detail), materials[i % materials.length].clone());
+    const asteroid = new THREE.Mesh(new THREE.IcosahedronGeometry(1, Math.random() > 0.55 ? 2 : 1), materials[i % materials.length].clone());
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.45;
     const beltRadius = 10.5 + Math.random() * 10.5;
-    asteroid.position.set(Math.cos(angle) * beltRadius, (Math.random() - 0.5) * 3.9, Math.sin(angle) * beltRadius);
     const scale = 0.06 + Math.random() * 0.34;
+    asteroid.position.set(Math.cos(angle) * beltRadius, (Math.random() - 0.5) * 3.9, Math.sin(angle) * beltRadius);
     asteroid.scale.set(scale, scale * (0.62 + Math.random() * 0.82), scale * (0.58 + Math.random() * 0.92));
     asteroid.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
     addAsteroidSurfaceDetails(asteroid, scale);
 
     if (!isMobile && Math.random() > 0.62) {
-      const crystal = new THREE.Mesh(
-        new THREE.ConeGeometry(scale * 0.45, scale * 2.2, 5),
-        new THREE.MeshBasicMaterial({ color: 0x8feaff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending })
-      );
+      const crystal = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.45, scale * 2.2, 5), new THREE.MeshBasicMaterial({ color: 0x8feaff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending }));
       crystal.position.set(scale * 0.8, scale * 0.5, 0);
       asteroid.add(crystal);
     }
@@ -430,14 +375,13 @@ function createSatelliteArray() {
     const satellite = new THREE.Group();
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.2, 0.38), bodyMaterial);
     const dish = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.26, 24), bodyMaterial.clone());
-    dish.position.z = 0.32;
-    dish.rotation.x = Math.PI / 2;
     const panelL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, 0.28), panelMaterial);
     const panelR = panelL.clone();
+    dish.position.z = 0.32;
+    dish.rotation.x = Math.PI / 2;
     panelL.position.x = -0.55;
     panelR.position.x = 0.55;
     satellite.add(body, dish, panelL, panelR);
-
     const angle = (i / (isMobile ? 3 : 5)) * Math.PI * 2;
     satellite.position.set(Math.cos(angle) * 4.2, Math.sin(angle * 1.7) * 0.65, Math.sin(angle) * 4.2);
     satellite.rotation.set(0.5, angle + Math.PI / 2, 0.2);
@@ -453,7 +397,6 @@ function createCrystalStation() {
   const group = new THREE.Group();
   const spineMaterial = new THREE.MeshStandardMaterial({ color: 0xefeaff, emissive: 0x5f44ff, emissiveIntensity: 0.7, roughness: 0.2, metalness: 0.36 });
   const glassMaterial = new THREE.MeshBasicMaterial({ color: 0x91f4ff, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
-
   const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.58, 1), spineMaterial);
   const upper = new THREE.Mesh(new THREE.ConeGeometry(0.34, 1.35, 6), glassMaterial);
   const lower = upper.clone();
@@ -474,7 +417,6 @@ function createCrystalStation() {
   const dockingRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.018, 10, 120), glassMaterial.clone());
   dockingRing.rotation.x = Math.PI / 2;
   group.add(dockingRing);
-
   group.position.set(5.8, 1.1, 6.2);
   group.rotation.set(0.3, -0.7, 0.2);
   return group;
@@ -484,14 +426,8 @@ function createComets(count = isMobile ? 3 : 6) {
   const group = new THREE.Group();
   for (let i = 0; i < count; i += 1) {
     const comet = new THREE.Group();
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.08 + Math.random() * 0.06, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0xeafaff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending })
-    );
-    const tail = new THREE.Mesh(
-      new THREE.ConeGeometry(0.08, 1.3 + Math.random() * 1.2, 18, 1, true),
-      new THREE.MeshBasicMaterial({ color: 0x7de8ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false })
-    );
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.08 + Math.random() * 0.06, 24, 24), new THREE.MeshBasicMaterial({ color: 0xeafaff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending }));
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.08, 1.3 + Math.random() * 1.2, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0x7de8ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
     tail.position.z = 0.7;
     tail.rotation.x = Math.PI / 2;
     comet.add(head, tail);
@@ -516,10 +452,7 @@ function createConstellationLines() {
     const geometry = new THREE.BufferGeometry().setFromPoints(cluster.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
     group.add(new THREE.Line(geometry, material));
     cluster.forEach(([x, y, z]) => {
-      const marker = new THREE.Mesh(
-        new THREE.SphereGeometry(0.055, 16, 16),
-        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.84, blending: THREE.AdditiveBlending })
-      );
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.84, blending: THREE.AdditiveBlending }));
       marker.position.set(x, y, z);
       group.add(marker);
     });
@@ -528,44 +461,27 @@ function createConstellationLines() {
   return group;
 }
 
+const backgroundStars = createBackgroundStars();
 const starTunnel = createStarTunnel();
 const nebula = createNebulaLayer();
 const arms = createGalaxyArms();
 const core = createCore();
 const asteroids = createAsteroids();
-const nearPlanet = createPlanet({
-  radius: isMobile ? 1.45 : 1.9,
-  position: new THREE.Vector3(-9.5, -3.4, 7.5),
-  color: 0x6f5dff,
-  emissive: 0x201047,
-  ring: true,
-  textureHues: [0.69, 0.78],
-  atmosphere: 0x91d7ff
-});
-const farPlanet = createPlanet({
-  radius: 0.82,
-  position: new THREE.Vector3(10.5, 4.6, -10.5),
-  color: 0x75c9ff,
-  emissive: 0x08213a,
-  ring: false,
-  textureHues: [0.52, 0.58],
-  atmosphere: 0xa4fff0
-});
+const nearPlanet = createPlanet({ radius: isMobile ? 1.45 : 1.9, position: new THREE.Vector3(-9.5, -3.4, 7.5), color: 0x6f5dff, emissive: 0x201047, ring: true, textureHues: [0.69, 0.78], atmosphere: 0x91d7ff });
+const farPlanet = createPlanet({ radius: 0.82, position: new THREE.Vector3(10.5, 4.6, -10.5), color: 0x75c9ff, emissive: 0x08213a, ring: false, textureHues: [0.52, 0.58], atmosphere: 0xa4fff0 });
 const satelliteArray = createSatelliteArray();
 const crystalStation = createCrystalStation();
 const comets = createComets();
 const constellations = createConstellationLines();
 
+depthGroup.add(starTunnel);
 galaxyGroup.add(nebula, arms, core, asteroids);
 galaxyGroup.rotation.x = 0.32;
-depthGroup.add(starTunnel);
 planetGroup.add(nearPlanet, farPlanet, satelliteArray);
 detailGroup.add(crystalStation, comets, constellations);
+scene.add(backgroundStars);
 
-const orbitRing = new THREE.Mesh(
-  new THREE.TorusGeometry(7.2, 0.018, 12, 260),
-  new THREE.MeshBasicMaterial({ color: 0xa89bff, transparent: true, opacity: 0.36, blending: THREE.AdditiveBlending })
-);
+const orbitRing = new THREE.Mesh(new THREE.TorusGeometry(7.2, 0.018, 12, 260), new THREE.MeshBasicMaterial({ color: 0xa89bff, transparent: true, opacity: 0.36, blending: THREE.AdditiveBlending }));
 orbitRing.rotation.x = Math.PI / 2 + 0.32;
 galaxyGroup.add(orbitRing);
 
@@ -584,6 +500,24 @@ galaxyGroup.add(thirdRing);
 
 if (statusEl) statusEl.textContent = "Detailed Galexia: high-detail planetary surfaces, craters, ridges, satellites, station, comets";
 
+const mouse = new THREE.Vector2();
+const targetMouse = new THREE.Vector2();
+const windowHalf = new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2);
+
+window.addEventListener("mousemove", (event) => {
+  mouse.x = (event.clientX - windowHalf.x) * 0.0005;
+  mouse.y = (event.clientY - windowHalf.y) * 0.0005;
+});
+
+setTimeout(() => {
+  if (statusEl) {
+    statusEl.style.opacity = "0";
+    setTimeout(() => {
+      statusEl.style.display = "none";
+    }, 1000);
+  }
+}, 3500);
+
 function resetCamera() {
   camera.position.copy(defaultCameraPosition);
   controls.target.set(0, 0, 0);
@@ -599,11 +533,17 @@ function animate() {
   const elapsed = clock.getElapsedTime();
   const pulse = 1 + Math.sin(elapsed * 2.2) * 0.035;
 
+  targetMouse.x += (mouse.x - targetMouse.x) * 0.05;
+  targetMouse.y += (mouse.y - targetMouse.y) * 0.05;
+
   if (!prefersReducedMotion) {
+    galaxyGroup.rotation.x = 0.32 + targetMouse.y;
+    galaxyGroup.rotation.z = targetMouse.x;
     galaxyGroup.rotation.y += 0.00135;
     arms.rotation.y += 0.00082;
     nebula.rotation.y -= 0.00042;
     starTunnel.rotation.z += 0.00022;
+    backgroundStars.rotation.y += 0.0001;
     asteroids.rotation.y -= 0.0018;
     orbitRing.rotation.z += 0.0024;
     secondRing.rotation.z -= 0.0013;
@@ -623,9 +563,10 @@ function animate() {
       if (comet.position.x > 18) comet.position.x = -18;
     });
 
-    camera.position.x = defaultCameraPosition.x + Math.sin(elapsed * 0.18) * (isMobile ? 0.65 : 1.2);
-    camera.position.y = defaultCameraPosition.y + Math.cos(elapsed * 0.16) * 0.5;
-    controls.target.x = Math.sin(elapsed * 0.12) * 0.8;
+    camera.position.x = defaultCameraPosition.x + Math.sin(elapsed * 0.18) * (isMobile ? 0.65 : 1.2) + targetMouse.x * 7.5;
+    camera.position.y = defaultCameraPosition.y + Math.cos(elapsed * 0.16) * 0.5 - targetMouse.y * 6;
+    controls.target.x = Math.sin(elapsed * 0.12) * 0.8 + targetMouse.x * 2.5;
+    controls.target.y = -targetMouse.y * 1.4;
   }
 
   core.userData.core.scale.setScalar(pulse);
@@ -645,6 +586,7 @@ animate();
 window.addEventListener("resize", () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
+  windowHalf.set(width / 2, height / 2);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
